@@ -1,0 +1,5 @@
+{
+  "name": "Acrasia-8 Well Dashboard",
+  "description": "A well completion dashboard visualizing lithology, depth, and initial production flow rates for the Acrasia-8 well, based on the provided Well Completion Report.",
+  "requestFramePermissions": []
+}
