@@ -21,19 +21,19 @@ const ProductionComparison: React.FC<Props> = ({ wells }) => {
     return entry;
   });
 
-  const colors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
+  const colors = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
 
   return (
-    <div className="flex flex-col h-full p-8">
-      <div className="mb-8 flex justify-between items-start">
+    <div className="flex flex-col h-full p-8 bg-white">
+      <div className="mb-10 flex justify-between items-start">
         <div>
-            <h3 className="font-bold text-slate-900 flex items-center gap-2.5 tracking-tight text-lg">
-                <div className="p-1.5 bg-indigo-50 rounded-lg border border-indigo-100">
-                    <BarChart3 size={18} className="text-indigo-600" />
+            <h3 className="font-bold text-slate-900 flex items-center gap-3 tracking-tight text-lg">
+                <div className="p-2 bg-indigo-50 rounded-lg border border-indigo-100 text-indigo-600">
+                    <BarChart3 size={20} />
                 </div>
                 Production Performance
             </h3>
-            <p className="text-xs font-medium text-slate-500 mt-1 pl-1">Initial flow rates (BOPD) per reservoir zone</p>
+            <p className="text-xs font-medium text-slate-500 mt-1.5 pl-1">Initial flow rates (BOPD) per reservoir zone</p>
         </div>
       </div>
 
@@ -50,7 +50,7 @@ const ProductionComparison: React.FC<Props> = ({ wells }) => {
               axisLine={false} 
               tickLine={false} 
               tick={{ fill: '#64748B', fontSize: 12, fontWeight: 500 }} 
-              dy={12}
+              dy={16}
             />
             <YAxis 
               axisLine={false} 
@@ -62,7 +62,7 @@ const ProductionComparison: React.FC<Props> = ({ wells }) => {
               cursor={{ fill: '#F8FAFC', opacity: 0.8 }}
               contentStyle={{ 
                   borderRadius: '16px', 
-                  border: '1px solid rgba(255,255,255,0.5)', 
+                  border: '1px solid rgba(226, 232, 240, 0.8)', 
                   backgroundColor: 'rgba(255,255,255,0.95)',
                   boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
                   padding: '16px',
@@ -73,7 +73,7 @@ const ProductionComparison: React.FC<Props> = ({ wells }) => {
             />
             <Legend 
                 verticalAlign="top" 
-                height={48} 
+                height={64} 
                 iconType="circle"
                 wrapperStyle={{ fontSize: '12px', color: '#64748B', fontWeight: 500 }}
             />
@@ -84,7 +84,7 @@ const ProductionComparison: React.FC<Props> = ({ wells }) => {
                  dataKey={well.name} 
                  fill={colors[index % colors.length]} 
                  radius={[6, 6, 0, 0]} 
-                 maxBarSize={50}
+                 maxBarSize={64}
                  animationDuration={1500}
                />
             ))}
