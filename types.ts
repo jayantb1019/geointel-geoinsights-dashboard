@@ -14,6 +14,21 @@ export interface ProductionTest {
   interval: string;
 }
 
+export interface Complication {
+  depth: number;
+  type: string; // e.g., "Lost Circulation", "Kick", "Stuck Pipe", "Tight Hole"
+  severity: 'low' | 'medium' | 'high';
+  description: string;
+}
+
+export interface Perforation {
+  topMD: number;
+  bottomMD: number;
+  zone: string;
+  shotDensity?: string; // e.g., "6 spf"
+  status?: 'open' | 'squeezed';
+}
+
 export interface WellData {
   name: string;
   location: {
@@ -27,10 +42,13 @@ export interface WellData {
   kbElevation: number;
   formations: Formation[];
   production: ProductionTest[];
+  complications: Complication[];
+  perforations: Perforation[];
   documents: {
     title: string;
     reference: string;
     page: number;
     quote?: string;
+    extractedData?: string;
   }[];
 }

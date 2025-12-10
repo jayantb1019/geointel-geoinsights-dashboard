@@ -34,6 +34,7 @@ interface Props {
 }
 
 const parseDMS = (dmsStr: string): number | null => {
+  if (!dmsStr) return null;
   const match = dmsStr.match(/(\d+)°\s*(\d+)'\s*([\d.]+)"\s*([NSEW])/);
   if (!match) return null;
   const degrees = parseFloat(match[1]);
@@ -41,6 +42,8 @@ const parseDMS = (dmsStr: string): number | null => {
   const seconds = parseFloat(match[3]);
   const direction = match[4];
   
+  if (isNaN(degrees) || isNaN(minutes) || isNaN(seconds)) return null;
+
   let decimal = degrees + minutes / 60 + seconds / 3600;
   if (direction === 'S' || direction === 'W') decimal *= -1;
   return decimal;
@@ -49,7 +52,9 @@ const parseDMS = (dmsStr: string): number | null => {
 const MapRecenter = ({ center }: { center: [number, number] }) => {
   const map = useMap();
   useEffect(() => {
-    map.flyTo(center, 13, { duration: 1.5, easeLinearity: 0.25 });
+    if (center && !isNaN(center[0]) && !isNaN(center[1])) {
+      map.flyTo(center, 13, { duration: 1.5, easeLinearity: 0.25 });
+    }
   }, [center, map]);
   return null;
 };
@@ -62,19 +67,32 @@ const WellMap: React.FC<Props> = ({ wells, selectedWellId, onSelectWell }) => {
   }, []);
 
   const wellCoordinates = useMemo(() => {
-    return wells.map(w => ({
-      name: w.name,
-      lat: parseDMS(w.location.lat) || -27.2354, 
-      lng: parseDMS(w.location.long) || 140.9959,
-      data: w
-    }));
+    return wells.map(w => {
+      const parsedLat = parseDMS(w.location.lat);
+      const parsedLng = parseDMS(w.location.long);
+      
+      // Fallback to Acrasia-8 default location if parsing fails
+      const safeLat = (parsedLat !== null && !isNaN(parsedLat)) ? parsedLat : -27.2354;
+      const safeLng = (parsedLng !== null && !isNaN(parsedLng)) ? parsedLng : 140.9959;
+
+      return {
+        name: w.name,
+        lat: safeLat,
+        lng: safeLng,
+        data: w
+      };
+    });
   }, [wells]);
 
   const selectedWellCoords = useMemo(() => {
     const selected = wellCoordinates.find(w => w.name === selectedWellId);
-    return selected ? [selected.lat, selected.lng] as [number, number] : null;
+    if (selected && !isNaN(selected.lat) && !isNaN(selected.lng)) {
+        return [selected.lat, selected.lng] as [number, number];
+    }
+    return null;
   }, [selectedWellId, wellCoordinates]);
 
+  // Default center if nothing selected or parsed
   const center = selectedWellCoords || [-27.2354, 140.9959];
 
   if (!mounted) return <div className="h-full w-full bg-slate-100 animate-pulse rounded-3xl border border-slate-200"></div>;

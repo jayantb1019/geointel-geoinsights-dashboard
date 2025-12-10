@@ -1,4 +1,5 @@
-import { WellData, Formation } from './types';
+
+import { WellData, Formation, Complication, Perforation } from './types';
 
 // Helper to parse DMS string to decimal degrees
 // Format: 27° 14' 07.52" S
@@ -23,12 +24,22 @@ const parseDMS = (dmsStr: string): number | null => {
 const toDMS = (decimal: number, isLat: boolean): string => {
   const direction = isLat ? (decimal < 0 ? 'S' : 'N') : (decimal < 0 ? 'W' : 'E');
   const absDec = Math.abs(decimal);
-  const degrees = Math.floor(absDec);
-  const minutesFloat = (absDec - degrees) * 60;
-  const minutes = Math.floor(minutesFloat);
-  const seconds = ((minutesFloat - minutes) * 60).toFixed(2);
+  let degrees = Math.floor(absDec);
+  let minutesFloat = (absDec - degrees) * 60;
+  let minutes = Math.floor(minutesFloat);
+  let seconds = (minutesFloat - minutes) * 60;
   
-  return `${degrees}° ${minutes}' ${seconds}" ${direction}`;
+  // Handle rounding edge case (e.g. 59.995 -> 60.00)
+  if (parseFloat(seconds.toFixed(2)) === 60) {
+      seconds = 0;
+      minutes += 1;
+  }
+  if (minutes === 60) {
+      minutes = 0;
+      degrees += 1;
+  }
+
+  return `${degrees}° ${minutes}' ${seconds.toFixed(2)}" ${direction}`;
 };
 
 export const ACRASIA_8_DATA: WellData = {
@@ -66,17 +77,28 @@ export const ACRASIA_8_DATA: WellData = {
     { zone: "Birkhead / Hutton", rateBOPD: 164, interval: "2010.0-2053.0 mMD" },
     { zone: "Poolowanna", rateBOPD: 250, interval: "2242.5-2265.0 mMD" }
   ],
+  complications: [
+    { depth: 950, type: "Tight Hole", severity: "low", description: "Overpull 10k lbs while tripping out." },
+    { depth: 1620, type: "Loss of Circulation", severity: "medium", description: "Lost 20 bbls mud to formation." },
+    { depth: 2150, type: "Gas Kick", severity: "high", description: "Detected 50 unit gas peak. Circulated out." }
+  ],
+  perforations: [
+    { topMD: 2010.0, bottomMD: 2053.0, zone: "Birkhead / Hutton", shotDensity: "6 spf" },
+    { topMD: 2242.5, bottomMD: 2265.0, zone: "Poolowanna", shotDensity: "12 spf" }
+  ],
   documents: [
     { 
       title: "Well Data Card", 
       reference: "PPL203-ACR8-GG-REP-002", 
       page: 4,
+      extractedData: "Total Depth: 2525.0 mRT",
       quote: "Acrasia-8 was drilled as a vertical well to a total depth of 2525.0mRT in the Mooracoochie Volcanics."
     },
     { 
-      title: "Summary", 
+      title: "DST #1 Summary", 
       reference: "PPL203-ACR8-GG-REP-002", 
       page: 6,
+      extractedData: "Flow Rate: 164 BOPD",
       quote: "The Birkhead / Hutton zone (2010.0-2053.0 mMD) flowed at 164 BOPD on a 1/2\" choke during DST #1."
     }
   ]
@@ -102,6 +124,35 @@ export const simulateExtraction = (filename: string): WellData => {
   }));
 
   const newTD = variedFormations[variedFormations.length - 1].bottomMD;
+
+  // Simulate complications based on random chance
+  const newComplications: Complication[] = [];
+  if (Math.random() > 0.5) {
+      newComplications.push({ 
+          depth: Math.floor(newTD * 0.3), 
+          type: "Tight Hole", 
+          severity: "low", 
+          description: "Minor overpull during wiper trip." 
+      });
+  }
+  if (Math.random() > 0.7) {
+      newComplications.push({ 
+          depth: Math.floor(newTD * 0.8), 
+          type: "Differential Sticking", 
+          severity: "medium", 
+          description: "Pipe stuck for 2 hours." 
+      });
+  }
+
+  // Simulate perfs near TD (usually in the Pay Zones)
+  // Assuming the 13th and 14th formations are pay zones for simulation
+  const payZone = variedFormations[13]; 
+  const newPerforations: Perforation[] = [{
+      topMD: payZone.topMD + 5,
+      bottomMD: payZone.bottomMD - 5,
+      zone: payZone.name,
+      shotDensity: "6 spf"
+  }];
 
   // Accurate Relative Coordinate Conversion (WGS84 Approximation for visual plotting)
   // Acrasia-8 Base
@@ -144,11 +195,14 @@ export const simulateExtraction = (filename: string): WellData => {
       rateBOPD: Math.floor(p.rateBOPD * (0.5 + Math.random())) // +/- 50%
     })),
     formations: variedFormations,
+    complications: newComplications,
+    perforations: newPerforations,
     documents: [
       { 
         title: "Completion Report", 
         reference: `${baseName}-REP-001`, 
         page: 1,
+        extractedData: `Top Hutton: ${variedFormations[13].topMD}m`,
         quote: `Well ${baseName} intersected the target Hutton reservoir at ${variedFormations[13].topMD}m, showing good porosity development.`
       }
     ]

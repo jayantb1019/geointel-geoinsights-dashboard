@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ACRASIA_8_DATA, simulateExtraction } from './data';
 import { WellData } from './types';
@@ -5,9 +6,10 @@ import StratigraphyComparison from './components/StratigraphyComparison';
 import ProductionComparison from './components/ProductionComparison';
 import WellComparisonTable from './components/WellComparisonTable';
 import DocumentReferenceTable from './components/DocumentReferenceTable';
+import EngineeringChart from './components/EngineeringChart';
 import FileUploader from './components/FileUploader';
 import WellMap from './components/WellMap';
-import { Box, Layers, BarChart3, Database, Activity } from 'lucide-react';
+import { Box, Layers, Construction, Activity } from 'lucide-react';
 
 function App() {
   const [wells, setWells] = useState<WellData[]>([ACRASIA_8_DATA]);
@@ -41,7 +43,7 @@ function App() {
                 <div className="flex items-center gap-2 mt-1.5">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Subsurface Data Intelligence</span>
                     <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-                    <span className="text-[10px] font-mono text-indigo-400">v2.4.0-RC</span>
+                    <span className="text-[10px] font-mono text-indigo-400">v2.4.1</span>
                 </div>
             </div>
           </div>
@@ -69,14 +71,13 @@ function App() {
       {/* Main Content */}
       <main className="max-w-[1920px] mx-auto p-6 lg:p-10 space-y-10">
         
-        {/* Row 1: Upload (Full Width Banner style) */}
+        {/* Row 1: Upload */}
         <div className="w-full animate-in fade-in slide-in-from-top-4 duration-700">
             <FileUploader onUpload={handleFileUpload} />
         </div>
 
         {/* Row 2: Map & Key Specs */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-auto lg:h-[650px]">
-             {/* Map takes up 8 columns */}
              <div className="lg:col-span-8 h-[500px] lg:h-full animate-in fade-in slide-in-from-left-4 duration-700 delay-100">
                 <WellMap 
                     wells={wells} 
@@ -84,39 +85,51 @@ function App() {
                     onSelectWell={setSelectedWellId} 
                 />
              </div>
-             {/* Key Metrics / Well List take up 4 columns */}
              <div className="lg:col-span-4 h-full animate-in fade-in slide-in-from-right-4 duration-700 delay-100">
                  <WellComparisonTable wells={wells} />
              </div>
         </div>
 
-        {/* Section Divider */}
+        {/* Section Divider: Subsurface */}
         <div className="flex items-center gap-6 py-6 opacity-80">
             <div className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent flex-1"></div>
             <div className="flex items-center gap-2.5 px-6 py-2 bg-white rounded-full border border-slate-200 shadow-sm text-slate-500 text-xs font-bold uppercase tracking-widest">
                 <Layers size={14} className="text-indigo-500"/>
-                Subsurface Formation Analysis
+                Subsurface Formation & Engineering
             </div>
             <div className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent flex-1"></div>
         </div>
 
-        {/* Row 3: Stratigraphy & Production */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
-          
-          {/* Stratigraphy Comparison */}
-          <div className="h-[800px] w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 ring-1 ring-slate-900/5">
+        {/* Row 3: Stratigraphy (Full Width now) */}
+        <div className="h-[700px] w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 ring-1 ring-slate-900/5">
             <StratigraphyComparison wells={wells} />
-          </div>
+        </div>
 
-          {/* Production Comparison & Docs */}
-          <div className="h-[800px] w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 ring-1 ring-slate-900/5">
-            <ProductionComparison wells={wells} />
+        {/* Row 4: Engineering Chart (Full Width) */}
+        <div className="h-[450px] w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 ring-1 ring-slate-900/5">
+             <EngineeringChart wells={wells} />
+        </div>
+
+        {/* Section Divider: Production */}
+        <div className="flex items-center gap-6 py-6 opacity-80">
+            <div className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent flex-1"></div>
+            <div className="flex items-center gap-2.5 px-6 py-2 bg-white rounded-full border border-slate-200 shadow-sm text-slate-500 text-xs font-bold uppercase tracking-widest">
+                <Construction size={14} className="text-indigo-500"/>
+                Production & Verification
+            </div>
+            <div className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent flex-1"></div>
+        </div>
+
+        {/* Row 5: Production & Docs */}
+        <div className="w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 ring-1 ring-slate-900/5">
+            <div className="h-[500px]">
+                <ProductionComparison wells={wells} />
+            </div>
             <div className="flex-1 border-t border-slate-100 bg-slate-50/50 p-8">
                 <DocumentReferenceTable wells={wells} />
             </div>
-          </div>
-
         </div>
+
       </main>
     </div>
   );
