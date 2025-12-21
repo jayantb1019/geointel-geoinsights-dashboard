@@ -1,8 +1,9 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# GeoIntel GeoInsights Dashboard
 
-![app 1](Screenshot%202025-12-21%20181504.png)
+![Screenshot%202025-12-21%20181504.png](https://github.com/jayantb1019/geointel-geoinsights-dashboard/blob/main/Screenshot%202025-12-21%20185008.png)
+![image2](https://github.com/jayantb1019/geointel-geoinsights-dashboard/blob/main/Screenshot%202025-12-21%20185024.png)
+![image3](https://github.com/jayantb1019/geointel-geoinsights-dashboard/blob/main/Screenshot%202025-12-21%20185045.png)
+![image4](https://github.com/jayantb1019/geointel-geoinsights-dashboard/blob/main/Screenshot%202025-12-21%20185110.png)
 
 # Run and deploy your AI Studio app
 
