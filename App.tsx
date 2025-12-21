@@ -7,9 +7,10 @@ import ProductionComparison from './components/ProductionComparison';
 import WellComparisonTable from './components/WellComparisonTable';
 import DocumentReferenceTable from './components/DocumentReferenceTable';
 import EngineeringChart from './components/EngineeringChart';
+import WellLogsInventory from './components/WellLogsInventory';
 import FileUploader from './components/FileUploader';
 import WellMap from './components/WellMap';
-import { Box, Layers, Construction, Activity } from 'lucide-react';
+import { Box, Layers, Construction, Activity, Database } from 'lucide-react';
 
 function App() {
   const [wells, setWells] = useState<WellData[]>([ACRASIA_8_DATA]);
@@ -100,7 +101,7 @@ function App() {
             <div className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent flex-1"></div>
         </div>
 
-        {/* Row 3: Stratigraphy (Full Width now) */}
+        {/* Row 3: Stratigraphy (Full Width) */}
         <div className="h-[700px] w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 ring-1 ring-slate-900/5">
             <StratigraphyComparison wells={wells} />
         </div>
@@ -120,14 +121,21 @@ function App() {
             <div className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent flex-1"></div>
         </div>
 
-        {/* Row 5: Production & Docs */}
-        <div className="w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 ring-1 ring-slate-900/5">
-            <div className="h-[500px]">
+        {/* Row 5: Production & Logs Inventory */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+             {/* Production Chart */}
+             <div className="lg:col-span-7 h-[500px] bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 ring-1 ring-slate-900/5">
                 <ProductionComparison wells={wells} />
-            </div>
-            <div className="flex-1 border-t border-slate-100 bg-slate-50/50 p-8">
-                <DocumentReferenceTable wells={wells} />
-            </div>
+             </div>
+             {/* Log Inventory */}
+             <div className="lg:col-span-5 h-[500px] animate-in fade-in slide-in-from-bottom-8 duration-700 delay-400">
+                <WellLogsInventory wells={wells} />
+             </div>
+        </div>
+        
+        {/* Row 6: Docs (Full Width) */}
+        <div className="w-full bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden p-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-500 ring-1 ring-slate-900/5">
+            <DocumentReferenceTable wells={wells} />
         </div>
 
       </main>

@@ -29,6 +29,15 @@ export interface Perforation {
   status?: 'open' | 'squeezed';
 }
 
+export interface WellLog {
+  runNumber: number;
+  suite: string; // e.g., "Super Combo", "GR-Resistivity"
+  date: string;
+  topMD: number;
+  bottomMD: number;
+  company: string;
+}
+
 export interface WellData {
   name: string;
   location: {
@@ -44,6 +53,7 @@ export interface WellData {
   production: ProductionTest[];
   complications: Complication[];
   perforations: Perforation[];
+  logs: WellLog[];
   documents: {
     title: string;
     reference: string;

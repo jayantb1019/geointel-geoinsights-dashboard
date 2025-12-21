@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { WellData } from '../types';
 import { Layers, Droplets } from 'lucide-react';
@@ -57,7 +58,7 @@ const StratigraphyComparison: React.FC<Props> = ({ wells }) => {
             {/* Wells Container */}
             <div className="flex gap-16 px-12 h-[650px]">
                 {wells.map((well) => (
-                    <div key={well.name} className="flex flex-col items-center w-40 group/well">
+                    <div key={well.name} className="flex flex-col items-center w-40 group/well relative hover:z-[100]">
                         {/* Well Head Header */}
                         <div className="mb-6 text-center sticky top-0 bg-white/95 backdrop-blur-sm z-20 w-[140%] -ml-[20%] pb-4 pt-2 border-b border-indigo-100/50 transition-transform duration-300 group-hover/well:translate-y-1 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] rounded-b-xl">
                              <div className="text-sm font-bold text-slate-900 truncate w-full group-hover/well:text-indigo-600 transition-colors">{well.name}</div>
@@ -67,14 +68,18 @@ const StratigraphyComparison: React.FC<Props> = ({ wells }) => {
                              </div>
                         </div>
 
-                        {/* The Column */}
-                        <div className="relative w-32 flex-1 bg-white shadow-2xl shadow-slate-300/40 ring-1 ring-slate-900/5 rounded-sm overflow-hidden transform transition-transform duration-500" style={{ height: `${columnHeight}px` }}>
-                            {/* Paper/Grain Texture Overlay */}
-                            <div className="absolute inset-0 z-10 opacity-[0.15] mix-blend-multiply pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")` }}></div>
+                        {/* The Column (Overflow visible for tooltips) */}
+                        <div className="relative w-32 flex-1 bg-white shadow-2xl shadow-slate-300/40 ring-1 ring-slate-900/5 rounded-sm transform transition-transform duration-500" style={{ height: `${columnHeight}px` }}>
                             
-                            {/* Grid lines background */}
-                            <div className="absolute inset-0 z-0 opacity-[0.05] bg-[linear-gradient(rgba(0,0,0,0.5)_1px,transparent_1px)] bg-[size:100%_40px]"></div>
+                            {/* Clipped Background Layer for Textures */}
+                            <div className="absolute inset-0 z-10 rounded-sm overflow-hidden pointer-events-none">
+                                {/* Paper/Grain Texture Overlay */}
+                                <div className="absolute inset-0 opacity-[0.15] mix-blend-multiply" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E")` }}></div>
+                                {/* Grid lines background */}
+                                <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(rgba(0,0,0,0.5)_1px,transparent_1px)] bg-[size:100%_40px]"></div>
+                            </div>
 
+                            {/* Formations (Unclipped) */}
                             {well.formations.map((fmt, idx) => {
                                 const topPx = scale(fmt.topMD);
                                 const heightPx = scale(fmt.bottomMD - fmt.topMD);
@@ -108,7 +113,7 @@ const StratigraphyComparison: React.FC<Props> = ({ wells }) => {
                                                 </div>
                                                 
                                                 {/* Tooltip */}
-                                                <div className="opacity-0 group-hover/oil:opacity-100 pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 w-48 bg-slate-900 text-white p-3 rounded-lg shadow-xl z-50 transition-opacity duration-200">
+                                                <div className="opacity-0 group-hover/oil:opacity-100 pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 w-48 bg-slate-900 text-white p-3 rounded-lg shadow-xl z-[200] transition-opacity duration-200">
                                                     <div className="flex items-center gap-2 mb-1 border-b border-white/10 pb-1">
                                                         <Droplets size={12} className="text-emerald-400" />
                                                         <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Hydrocarbon Show</span>
@@ -126,7 +131,7 @@ const StratigraphyComparison: React.FC<Props> = ({ wells }) => {
                                         )}
                                         
                                         {/* Formation Info Popover */}
-                                        <div className="opacity-0 group-hover/formation:opacity-100 pointer-events-none absolute left-[105%] top-0 min-w-[260px] bg-white/95 backdrop-blur-xl text-slate-800 p-4 rounded-xl shadow-2xl shadow-slate-900/20 z-[60] transition-all duration-200 translate-x-4 group-hover/formation:translate-x-0 border border-slate-200 ring-1 ring-slate-900/5">
+                                        <div className="opacity-0 group-hover/formation:opacity-100 pointer-events-none absolute left-[105%] top-0 min-w-[260px] bg-white/95 backdrop-blur-xl text-slate-800 p-4 rounded-xl shadow-2xl shadow-slate-900/20 z-[200] transition-all duration-200 translate-x-4 group-hover/formation:translate-x-0 border border-slate-200 ring-1 ring-slate-900/5">
                                             <div className="flex items-start justify-between border-b border-slate-100 pb-2 mb-2">
                                                 <div className="font-bold text-sm leading-tight text-slate-900">{fmt.name}</div>
                                                 {fmt.oilShow && <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide border border-emerald-200">Oil Show</span>}

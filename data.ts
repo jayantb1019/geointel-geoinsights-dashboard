@@ -1,5 +1,5 @@
 
-import { WellData, Formation, Complication, Perforation } from './types';
+import { WellData, Formation, Complication, Perforation, WellLog } from './types';
 
 // Helper to parse DMS string to decimal degrees
 // Format: 27° 14' 07.52" S
@@ -85,6 +85,11 @@ export const ACRASIA_8_DATA: WellData = {
   perforations: [
     { topMD: 2010.0, bottomMD: 2053.0, zone: "Birkhead / Hutton", shotDensity: "6 spf" },
     { topMD: 2242.5, bottomMD: 2265.0, zone: "Poolowanna", shotDensity: "12 spf" }
+  ],
+  logs: [
+    { runNumber: 1, suite: "DLL-MSFL-GR-SP-CAL", date: "05/01/2014", topMD: 50, bottomMD: 780, company: "Schlumberger" },
+    { runNumber: 2, suite: "PEX-HRLA-HNGS-BHC", date: "15/01/2014", topMD: 780, bottomMD: 2525, company: "Schlumberger" },
+    { runNumber: 2, suite: "FMI-DSI-GPIT", date: "16/01/2014", topMD: 1800, bottomMD: 2525, company: "Schlumberger" }
   ],
   documents: [
     { 
@@ -178,6 +183,30 @@ export const simulateExtraction = (filename: string): WellData => {
   const spudDateObj = new Date(baseDateObj.getTime() + (randomDays * 24 * 60 * 60 * 1000));
   const spudDate = spudDateObj.toLocaleDateString('en-GB'); // DD/MM/YYYY
 
+  // Simulate Logs
+  const surfaceCasingDepth = Math.round(780 * depthFactor);
+  const logDateObj = new Date(spudDateObj.getTime() + (15 * 24 * 60 * 60 * 1000));
+  const logDate = logDateObj.toLocaleDateString('en-GB');
+  
+  const newLogs: WellLog[] = [
+    { 
+        runNumber: 1, 
+        suite: "DLL-MSFL-GR-SP-CAL", 
+        date: spudDateObj.toLocaleDateString('en-GB'), // Early in drilling
+        topMD: 50, 
+        bottomMD: surfaceCasingDepth, 
+        company: "Schlumberger" 
+    },
+    { 
+        runNumber: 2, 
+        suite: "PEX-HRLA-HNGS-BHC", 
+        date: logDate, 
+        topMD: surfaceCasingDepth, 
+        bottomMD: newTD, 
+        company: "Schlumberger" 
+    }
+  ];
+
   return {
     ...ACRASIA_8_DATA,
     name: baseName,
@@ -197,6 +226,7 @@ export const simulateExtraction = (filename: string): WellData => {
     formations: variedFormations,
     complications: newComplications,
     perforations: newPerforations,
+    logs: newLogs,
     documents: [
       { 
         title: "Completion Report", 

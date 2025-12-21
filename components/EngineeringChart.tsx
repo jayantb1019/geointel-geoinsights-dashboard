@@ -61,7 +61,7 @@ const EngineeringChart: React.FC<Props> = ({ wells }) => {
             {/* Well Tracks */}
             <div className="flex-1 space-y-6">
                 {wells.map((well) => (
-                    <div key={well.name} className="flex items-center group/well">
+                    <div key={well.name} className="flex items-center group/well relative hover:z-[100]">
                         {/* Well Info Label (Left) */}
                         <div className="w-48 pr-6 flex flex-col items-end shrink-0">
                              <div className="font-bold text-sm text-slate-900 group-hover/well:text-indigo-600 transition-colors">{well.name}</div>
@@ -69,14 +69,17 @@ const EngineeringChart: React.FC<Props> = ({ wells }) => {
                         </div>
 
                         {/* Track */}
-                        <div className="flex-1 h-16 relative bg-white border border-slate-200 rounded-lg shadow-sm group-hover/well:shadow-md transition-all overflow-hidden">
-                            {/* Grid Background */}
-                            <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(90deg,rgba(0,0,0,0.5)_1px,transparent_1px)] bg-[size:100px_100%]"></div>
+                        <div className="flex-1 h-16 relative bg-white border border-slate-200 rounded-lg shadow-sm group-hover/well:shadow-md transition-all">
                             
-                            {/* Borehole Line */}
-                            <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-100 border-y border-slate-200 -mt-0.5"></div>
+                            {/* Clipped Background Layer for Grid & Lines */}
+                            <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
+                                {/* Grid Background */}
+                                <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(90deg,rgba(0,0,0,0.5)_1px,transparent_1px)] bg-[size:100px_100%]"></div>
+                                {/* Borehole Line */}
+                                <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-100 border-y border-slate-200 -mt-0.5"></div>
+                            </div>
 
-                            {/* Perforations */}
+                            {/* Perforations (Unclipped) */}
                             {well.perforations && well.perforations.map((perf, idx) => (
                                 <div
                                     key={`perf-${idx}`}
@@ -91,7 +94,7 @@ const EngineeringChart: React.FC<Props> = ({ wells }) => {
                                     <div className="w-full h-full opacity-60 bg-[radial-gradient(circle,#fff_1px,transparent_1px)] [background-size:4px_4px]"></div>
                                     
                                     {/* Tooltip */}
-                                    <div className="opacity-0 group-hover/perf:opacity-100 pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-slate-900 text-white text-[10px] p-2.5 rounded shadow-xl whitespace-nowrap z-50">
+                                    <div className="opacity-0 group-hover/perf:opacity-100 pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-slate-900 text-white text-[10px] p-2.5 rounded shadow-xl whitespace-nowrap z-[200] transition-opacity duration-150">
                                         <div className="font-bold text-emerald-400 flex items-center gap-1.5 mb-1"><Crosshair size={10}/> Perforation Zone</div>
                                         <div>{perf.zone}</div>
                                         <div className="font-mono text-slate-400 mt-0.5">{perf.topMD}-{perf.bottomMD}m</div>
@@ -100,7 +103,7 @@ const EngineeringChart: React.FC<Props> = ({ wells }) => {
                                 </div>
                             ))}
 
-                            {/* Complications */}
+                            {/* Complications (Unclipped) */}
                             {well.complications && well.complications.map((comp, idx) => {
                                 let Icon = Info;
                                 let colorClass = "text-blue-500 bg-blue-50 border-blue-200";
@@ -124,7 +127,7 @@ const EngineeringChart: React.FC<Props> = ({ wells }) => {
                                         </div>
 
                                         {/* Complication Tooltip */}
-                                        <div className="opacity-0 group-hover/comp:opacity-100 pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-3 bg-white border border-slate-200 text-slate-800 p-3 rounded-xl shadow-xl w-48 z-50 ring-1 ring-slate-900/5">
+                                        <div className="opacity-0 group-hover/comp:opacity-100 pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-3 bg-white border border-slate-200 text-slate-800 p-3 rounded-xl shadow-xl w-48 z-[200] ring-1 ring-slate-900/5 transition-opacity duration-150">
                                             <div className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${comp.severity === 'high' ? 'text-rose-600' : comp.severity === 'medium' ? 'text-amber-600' : 'text-blue-600'}`}>
                                                 {comp.type}
                                             </div>
