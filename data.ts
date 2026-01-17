@@ -1,45 +1,20 @@
 
+import { GoogleGenAI, Type } from "@google/genai";
 import { WellData, Formation, Complication, Perforation, WellLog } from './types';
 
-// Helper to parse DMS string to decimal degrees
-// Format: 27° 14' 07.52" S
-const parseDMS = (dmsStr: string): number | null => {
-  const match = dmsStr.match(/(\d+)°\s*(\d+)'\s*([\d.]+)"\s*([NSEW])/);
-  if (!match) return null;
-  const degrees = parseFloat(match[1]);
-  const minutes = parseFloat(match[2]);
-  const seconds = parseFloat(match[3]);
-  const direction = match[4];
-  
-  let decimal = degrees + minutes / 60 + seconds / 3600;
-  
-  if (direction === 'S' || direction === 'W') {
-    decimal = decimal * -1;
-  }
-  
-  return decimal;
-};
-
-// Helper to convert decimal degrees back to DMS string
-const toDMS = (decimal: number, isLat: boolean): string => {
-  const direction = isLat ? (decimal < 0 ? 'S' : 'N') : (decimal < 0 ? 'W' : 'E');
-  const absDec = Math.abs(decimal);
-  let degrees = Math.floor(absDec);
-  let minutesFloat = (absDec - degrees) * 60;
-  let minutes = Math.floor(minutesFloat);
-  let seconds = (minutesFloat - minutes) * 60;
-  
-  // Handle rounding edge case (e.g. 59.995 -> 60.00)
-  if (parseFloat(seconds.toFixed(2)) === 60) {
-      seconds = 0;
-      minutes += 1;
-  }
-  if (minutes === 60) {
-      minutes = 0;
-      degrees += 1;
-  }
-
-  return `${degrees}° ${minutes}' ${seconds.toFixed(2)}" ${direction}`;
+// Helper to convert File to Base64
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Remove data URL prefix (e.g. "data:application/pdf;base64,")
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 };
 
 export const ACRASIA_8_DATA: WellData = {
@@ -109,132 +84,145 @@ export const ACRASIA_8_DATA: WellData = {
   ]
 };
 
-// Simulation helper to generate data from a "new file"
-export const simulateExtraction = (filename: string): WellData => {
-  // Generate random offsets to simulate different wells in the same field (Cooper Basin PPL 203)
-  // Base location Acrasia-8
-  const offsetN = Math.floor(Math.random() * 8000) - 4000; // +/- 4km Northing
-  const offsetE = Math.floor(Math.random() * 8000) - 4000; // +/- 4km Easting
-  
-  const baseName = filename.replace('.pdf', '').replace(/_/g, ' ');
-
-  // Vary depths slightly
-  const depthFactor = 0.95 + Math.random() * 0.1; // +/- 5% variation
-  
-  const variedFormations: Formation[] = ACRASIA_8_DATA.formations.map(f => ({
-    ...f,
-    topMD: Math.round(f.topMD * depthFactor * 10) / 10,
-    bottomMD: Math.round(f.bottomMD * depthFactor * 10) / 10,
-    oilShow: Math.random() > 0.7 ? true : false
-  }));
-
-  const newTD = variedFormations[variedFormations.length - 1].bottomMD;
-
-  // Simulate complications based on random chance
-  const newComplications: Complication[] = [];
-  if (Math.random() > 0.5) {
-      newComplications.push({ 
-          depth: Math.floor(newTD * 0.3), 
-          type: "Tight Hole", 
-          severity: "low", 
-          description: "Minor overpull during wiper trip." 
-      });
-  }
-  if (Math.random() > 0.7) {
-      newComplications.push({ 
-          depth: Math.floor(newTD * 0.8), 
-          type: "Differential Sticking", 
-          severity: "medium", 
-          description: "Pipe stuck for 2 hours." 
-      });
+// Real data extraction using Gemini API
+export const processWellReport = async (file: File): Promise<WellData> => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key not found. Please ensure process.env.API_KEY is set.");
   }
 
-  // Simulate perfs near TD (usually in the Pay Zones)
-  // Assuming the 13th and 14th formations are pay zones for simulation
-  const payZone = variedFormations[13]; 
-  const newPerforations: Perforation[] = [{
-      topMD: payZone.topMD + 5,
-      bottomMD: payZone.bottomMD - 5,
-      zone: payZone.name,
-      shotDensity: "6 spf"
-  }];
+  const ai = new GoogleGenAI({ apiKey });
+  const base64Data = await fileToBase64(file);
 
-  // Accurate Relative Coordinate Conversion (WGS84 Approximation for visual plotting)
-  // Acrasia-8 Base
-  const baseLat = -27.235422;
-  const baseLong = 140.995906;
-  const baseNorthing = ACRASIA_8_DATA.location.northing;
-  const baseEasting = ACRASIA_8_DATA.location.easting;
-
-  const newNorthing = baseNorthing + offsetN;
-  const newEasting = baseEasting + offsetE;
-
-  // Approx conversions: 1 deg lat = 110.95 km, 1 deg long at 27S = 99.0 km
-  const latDegPerMeter = 1 / 110950;
-  const longDegPerMeter = 1 / (111320 * Math.cos(baseLat * (Math.PI / 180)));
-
-  const newLat = baseLat + (offsetN * latDegPerMeter);
-  const newLong = baseLong + (offsetE * longDegPerMeter);
-  
-  // Randomize Spud Date (within 2 years of base)
-  // Ensure we get a variety of dates
-  const baseDateObj = new Date(2013, 11, 30);
-  const randomDays = Math.floor(Math.random() * 1500) - 750; // Wider range +/- 2 years
-  const spudDateObj = new Date(baseDateObj.getTime() + (randomDays * 24 * 60 * 60 * 1000));
-  const spudDate = spudDateObj.toLocaleDateString('en-GB'); // DD/MM/YYYY
-
-  // Simulate Logs
-  const surfaceCasingDepth = Math.round(780 * depthFactor);
-  const logDateObj = new Date(spudDateObj.getTime() + (15 * 24 * 60 * 60 * 1000));
-  const logDate = logDateObj.toLocaleDateString('en-GB');
-  
-  const newLogs: WellLog[] = [
-    { 
-        runNumber: 1, 
-        suite: "DLL-MSFL-GR-SP-CAL", 
-        date: spudDateObj.toLocaleDateString('en-GB'), // Early in drilling
-        topMD: 50, 
-        bottomMD: surfaceCasingDepth, 
-        company: "Schlumberger" 
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash-latest",
+    contents: {
+      parts: [
+        {
+          inlineData: {
+            mimeType: "application/pdf",
+            data: base64Data
+          }
+        },
+        {
+          text: `You are an expert Petroleum Engineer and Data Scientist. 
+                 Analyze the attached Well Completion Report PDF. 
+                 Extract the technical well data into the specified JSON format.
+                 
+                 Guidelines:
+                 1. Extract the Well Name, Spud Date, Total Depth (TD), and KB Elevation accurately.
+                 2. Location: Extract coordinates. If in DMS, provide the string. If UTM, try to convert or provide the raw values mapped to northing/easting.
+                 3. Formations: Extract the Stratigraphic Table. Infer a hex color code for each formation based on its lithology (e.g., Sandstone: #F5F5DC, Shale: #708090, Coal: #2F4F4F).
+                 4. Production: Extract Drill Stem Test (DST) results, specifically flow rates (BOPD) and intervals.
+                 5. Complications: Identify drilling hazards like kicks, losses, or tight holes. Assign a severity level.
+                 6. Perforations: Extract perforation intervals and shot density.
+                 7. Logs: Extract the Wireline Logging Summary (Suite, Date, Interval, Run #).
+                 8. Documents: Provide 1-2 key excerpts verifying the extraction, such as the spud date source or the main target reservoir summary.`
+        }
+      ]
     },
-    { 
-        runNumber: 2, 
-        suite: "PEX-HRLA-HNGS-BHC", 
-        date: logDate, 
-        topMD: surfaceCasingDepth, 
-        bottomMD: newTD, 
-        company: "Schlumberger" 
-    }
-  ];
-
-  return {
-    ...ACRASIA_8_DATA,
-    name: baseName,
-    location: {
-      lat: toDMS(newLat, true), 
-      long: toDMS(newLong, false),
-      northing: newNorthing,
-      easting: newEasting
-    },
-    spudDate: spudDate,
-    td: newTD,
-    kbElevation: Math.round(130 + Math.random() * 20),
-    production: ACRASIA_8_DATA.production.map(p => ({
-      ...p,
-      rateBOPD: Math.floor(p.rateBOPD * (0.5 + Math.random())) // +/- 50%
-    })),
-    formations: variedFormations,
-    complications: newComplications,
-    perforations: newPerforations,
-    logs: newLogs,
-    documents: [
-      { 
-        title: "Completion Report", 
-        reference: `${baseName}-REP-001`, 
-        page: 1,
-        extractedData: `Top Hutton: ${variedFormations[13].topMD}m`,
-        quote: `Well ${baseName} intersected the target Hutton reservoir at ${variedFormations[13].topMD}m, showing good porosity development.`
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          name: { type: Type.STRING, description: "Name of the well" },
+          location: {
+            type: Type.OBJECT,
+            properties: {
+              lat: { type: Type.STRING, description: "Latitude in DMS format (e.g. 27° 14' 07.52\" S)" },
+              long: { type: Type.STRING, description: "Longitude in DMS format (e.g. 140° 59' 45.26\" E)" },
+              northing: { type: Type.NUMBER, description: "UTM Northing" },
+              easting: { type: Type.NUMBER, description: "UTM Easting" }
+            }
+          },
+          spudDate: { type: Type.STRING, description: "Date the well was spudded (DD/MM/YYYY)" },
+          td: { type: Type.NUMBER, description: "Total Depth in meters" },
+          kbElevation: { type: Type.NUMBER, description: "Kelly Bushing Elevation in meters" },
+          formations: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                topMD: { type: Type.NUMBER },
+                bottomMD: { type: Type.NUMBER },
+                description: { type: Type.STRING, description: "Lithological description" },
+                oilShow: { type: Type.BOOLEAN },
+                color: { type: Type.STRING, description: "Hex color code for visualization" }
+              }
+            }
+          },
+          production: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                zone: { type: Type.STRING },
+                rateBOPD: { type: Type.NUMBER },
+                interval: { type: Type.STRING }
+              }
+            }
+          },
+          complications: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                depth: { type: Type.NUMBER },
+                type: { type: Type.STRING },
+                severity: { type: Type.STRING, enum: ["low", "medium", "high"] },
+                description: { type: Type.STRING }
+              }
+            }
+          },
+          perforations: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                topMD: { type: Type.NUMBER },
+                bottomMD: { type: Type.NUMBER },
+                zone: { type: Type.STRING },
+                shotDensity: { type: Type.STRING }
+              }
+            }
+          },
+          logs: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                runNumber: { type: Type.NUMBER },
+                suite: { type: Type.STRING },
+                date: { type: Type.STRING },
+                topMD: { type: Type.NUMBER },
+                bottomMD: { type: Type.NUMBER },
+                company: { type: Type.STRING }
+              }
+            }
+          },
+          documents: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                reference: { type: Type.STRING },
+                page: { type: Type.NUMBER },
+                quote: { type: Type.STRING },
+                extractedData: { type: Type.STRING }
+              }
+            }
+          }
+        }
       }
-    ]
-  };
+    }
+  });
+
+  if (!response.text) {
+    throw new Error("Failed to extract data from the document.");
+  }
+
+  return JSON.parse(response.text) as WellData;
 };

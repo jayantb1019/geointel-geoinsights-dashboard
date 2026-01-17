@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ACRASIA_8_DATA, simulateExtraction } from './data';
+import { ACRASIA_8_DATA, processWellReport } from './data';
 import { WellData } from './types';
 import StratigraphyComparison from './components/StratigraphyComparison';
 import ProductionComparison from './components/ProductionComparison';
@@ -10,24 +10,29 @@ import EngineeringChart from './components/EngineeringChart';
 import WellLogsInventory from './components/WellLogsInventory';
 import FileUploader from './components/FileUploader';
 import WellMap from './components/WellMap';
-import { Box, Layers, Construction, Activity, Database } from 'lucide-react';
+import { Box, Layers, Construction, Activity, Database, AlertCircle } from 'lucide-react';
 
 function App() {
   const [wells, setWells] = useState<WellData[]>([ACRASIA_8_DATA]);
   const [selectedWellId, setSelectedWellId] = useState<string>(ACRASIA_8_DATA.name);
+  const [error, setError] = useState<string | null>(null);
 
   const handleFileUpload = async (files: File[]) => {
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        const newWells = files.map(file => simulateExtraction(file.name));
-        setWells(prev => [...prev, ...newWells]);
-        
-        if (newWells.length > 0) {
-            setSelectedWellId(newWells[newWells.length - 1].name);
-        }
-        resolve();
-      }, 1500); 
-    });
+    setError(null);
+    try {
+      const results = await Promise.all(
+        files.map(file => processWellReport(file))
+      );
+      
+      setWells(prev => [...prev, ...results]);
+      
+      if (results.length > 0) {
+        setSelectedWellId(results[results.length - 1].name);
+      }
+    } catch (err) {
+      console.error("Extraction error:", err);
+      setError("Failed to extract data from one or more files. Please ensure valid PDF Completion Reports are uploaded and the API key is valid.");
+    }
   };
 
   return (
@@ -73,8 +78,14 @@ function App() {
       <main className="max-w-[1920px] mx-auto p-6 lg:p-10 space-y-10">
         
         {/* Row 1: Upload */}
-        <div className="w-full animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="w-full animate-in fade-in slide-in-from-top-4 duration-700 space-y-4">
             <FileUploader onUpload={handleFileUpload} />
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center gap-3 animate-in fade-in">
+                <AlertCircle size={20} />
+                <span className="text-sm font-medium">{error}</span>
+              </div>
+            )}
         </div>
 
         {/* Row 2: Map & Key Specs */}
