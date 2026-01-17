@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { WellData } from '../types';
 import { MapPin, Calendar, ArrowDown, Database, Info, Activity } from 'lucide-react';
@@ -42,21 +43,21 @@ const WellComparisonTable: React.FC<Props> = ({ wells }) => {
                         <div className="p-1.5 rounded-md bg-slate-100 text-slate-500 ring-1 ring-slate-200/50"><ArrowDown size={14}/></div>
                         Total Depth
                     </td>
-                    {wells.map(w => <td key={w.name} className="px-6 py-5 font-mono font-medium text-slate-700 tabular-nums">{w.td.toLocaleString()} <span className="text-slate-400 text-xs font-sans">m</span></td>)}
+                    {wells.map(w => <td key={w.name} className="px-6 py-5 font-mono font-medium text-slate-700 tabular-nums">{w.td?.toLocaleString() ?? 'N/A'} <span className="text-slate-400 text-xs font-sans">m</span></td>)}
                 </tr>
                 <tr className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-5 font-semibold text-slate-500 flex items-center gap-3 text-xs uppercase tracking-wide">
                         <div className="p-1.5 rounded-md bg-slate-100 text-slate-500 ring-1 ring-slate-200/50"><Activity size={14}/></div>
                         KB Elevation
                     </td>
-                    {wells.map(w => <td key={w.name} className="px-6 py-5 font-mono text-slate-600 tabular-nums">{w.kbElevation} <span className="text-slate-400 text-xs font-sans">m</span></td>)}
+                    {wells.map(w => <td key={w.name} className="px-6 py-5 font-mono text-slate-600 tabular-nums">{w.kbElevation?.toLocaleString() ?? '-'} <span className="text-slate-400 text-xs font-sans">m</span></td>)}
                 </tr>
                 <tr className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-5 font-semibold text-slate-500 flex items-center gap-3 text-xs uppercase tracking-wide">
                         <div className="p-1.5 rounded-md bg-slate-100 text-slate-500 ring-1 ring-slate-200/50"><Calendar size={14}/></div>
                         Spud Date
                     </td>
-                    {wells.map(w => <td key={w.name} className="px-6 py-5 text-slate-600 font-medium">{w.spudDate}</td>)}
+                    {wells.map(w => <td key={w.name} className="px-6 py-5 text-slate-600 font-medium">{w.spudDate || '-'}</td>)}
                 </tr>
                 <tr className="group hover:bg-slate-50/50 transition-colors">
                     <td className="px-8 py-5 font-semibold text-slate-500 flex items-center gap-3 text-xs uppercase tracking-wide">
@@ -68,11 +69,11 @@ const WellComparisonTable: React.FC<Props> = ({ wells }) => {
                             <div className="flex flex-col gap-1.5">
                                 <div className="flex justify-between items-baseline max-w-[140px] border-b border-slate-100 pb-1 border-dashed">
                                     <span className="text-[9px] text-slate-400 uppercase tracking-wider font-bold">East</span>
-                                    <span className="font-mono text-xs text-slate-700 tabular-nums">{w.location.easting.toLocaleString()}</span>
+                                    <span className="font-mono text-xs text-slate-700 tabular-nums">{w.location?.easting?.toLocaleString() ?? '-'}</span>
                                 </div>
                                 <div className="flex justify-between items-baseline max-w-[140px]">
                                     <span className="text-[9px] text-slate-400 uppercase tracking-wider font-bold">North</span>
-                                    <span className="font-mono text-xs text-slate-700 tabular-nums">{w.location.northing.toLocaleString()}</span>
+                                    <span className="font-mono text-xs text-slate-700 tabular-nums">{w.location?.northing?.toLocaleString() ?? '-'}</span>
                                 </div>
                             </div>
                         </td>
@@ -87,9 +88,9 @@ const WellComparisonTable: React.FC<Props> = ({ wells }) => {
                         <td key={w.name} className="px-6 py-5">
                             <span className={`
                                 inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border
-                                ${w.production.length > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'}
+                                ${w.production && w.production.length > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'}
                             `}>
-                                {w.production.length} {w.production.length === 1 ? 'Zone' : 'Zones'}
+                                {w.production?.length || 0} {w.production?.length === 1 ? 'Zone' : 'Zones'}
                             </span>
                         </td>
                     ))}

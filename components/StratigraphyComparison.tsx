@@ -8,7 +8,8 @@ interface Props {
 }
 
 const StratigraphyComparison: React.FC<Props> = ({ wells }) => {
-  const maxDepth = Math.max(...wells.map(w => w.td));
+  // Safe max depth calculation handling potential missing td
+  const maxDepth = Math.max(...wells.map(w => w.td || 2000), 100);
   const columnHeight = 650;
   
   const scale = (depth: number) => (depth / maxDepth) * columnHeight;
@@ -64,7 +65,7 @@ const StratigraphyComparison: React.FC<Props> = ({ wells }) => {
                              <div className="text-sm font-bold text-slate-900 truncate w-full group-hover/well:text-indigo-600 transition-colors">{well.name}</div>
                              <div className="flex items-center justify-center gap-2 mt-1">
                                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-100 px-1.5 py-0.5 rounded">TD</span>
-                                <span className="text-xs font-mono font-medium text-slate-600">{well.td}m</span>
+                                <span className="text-xs font-mono font-medium text-slate-600">{well.td?.toLocaleString() ?? '?'}m</span>
                              </div>
                         </div>
 
@@ -80,9 +81,9 @@ const StratigraphyComparison: React.FC<Props> = ({ wells }) => {
                             </div>
 
                             {/* Formations (Unclipped) */}
-                            {well.formations.map((fmt, idx) => {
-                                const topPx = scale(fmt.topMD);
-                                const heightPx = scale(fmt.bottomMD - fmt.topMD);
+                            {well.formations?.map((fmt, idx) => {
+                                const topPx = scale(fmt.topMD || 0);
+                                const heightPx = scale((fmt.bottomMD || 0) - (fmt.topMD || 0));
                                 
                                 return (
                                     <div
@@ -91,7 +92,7 @@ const StratigraphyComparison: React.FC<Props> = ({ wells }) => {
                                         style={{
                                             top: `${topPx}px`,
                                             height: `${Math.max(heightPx, 1)}px`, 
-                                            backgroundColor: fmt.color,
+                                            backgroundColor: fmt.color || '#e2e8f0',
                                             borderBottom: '1px solid rgba(255,255,255,0.1)'
                                         }}
                                     >
@@ -99,7 +100,7 @@ const StratigraphyComparison: React.FC<Props> = ({ wells }) => {
                                         <div className="absolute inset-0 w-full h-full opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:4px_4px]"></div>
 
                                         {/* Label for thick layers */}
-                                        {heightPx > 32 && (
+                                        {heightPx > 32 && fmt.name && (
                                             <span className="relative z-10 text-[9px] text-slate-900/60 font-black truncate px-1 text-center w-full block mix-blend-color-burn uppercase tracking-tight">
                                                 {fmt.name.split(' ')[0]}
                                             </span>
@@ -133,17 +134,17 @@ const StratigraphyComparison: React.FC<Props> = ({ wells }) => {
                                         {/* Formation Info Popover */}
                                         <div className="opacity-0 group-hover/formation:opacity-100 pointer-events-none absolute left-[105%] top-0 min-w-[260px] bg-white/95 backdrop-blur-xl text-slate-800 p-4 rounded-xl shadow-2xl shadow-slate-900/20 z-[200] transition-all duration-200 translate-x-4 group-hover/formation:translate-x-0 border border-slate-200 ring-1 ring-slate-900/5">
                                             <div className="flex items-start justify-between border-b border-slate-100 pb-2 mb-2">
-                                                <div className="font-bold text-sm leading-tight text-slate-900">{fmt.name}</div>
+                                                <div className="font-bold text-sm leading-tight text-slate-900">{fmt.name || 'Unknown Formation'}</div>
                                                 {fmt.oilShow && <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-wide border border-emerald-200">Oil Show</span>}
                                             </div>
                                             <div className="grid grid-cols-2 gap-4 text-[10px] font-mono text-slate-500 mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
                                                 <div>
                                                     <span className="block text-slate-400 uppercase tracking-wider text-[9px] mb-0.5">Top MD</span>
-                                                    <span className="text-slate-700 font-bold text-xs">{fmt.topMD.toFixed(1)}m</span>
+                                                    <span className="text-slate-700 font-bold text-xs">{fmt.topMD?.toFixed(1) || 0}m</span>
                                                 </div>
                                                 <div>
                                                     <span className="block text-slate-400 uppercase tracking-wider text-[9px] mb-0.5">Base MD</span>
-                                                    <span className="text-slate-700 font-bold text-xs">{fmt.bottomMD.toFixed(1)}m</span>
+                                                    <span className="text-slate-700 font-bold text-xs">{fmt.bottomMD?.toFixed(1) || 0}m</span>
                                                 </div>
                                             </div>
                                             <div className="text-xs leading-relaxed text-slate-600">

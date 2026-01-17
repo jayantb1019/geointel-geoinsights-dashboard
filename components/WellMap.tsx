@@ -1,3 +1,4 @@
+
 import React, { useMemo, useEffect, useState } from 'react';
 import { WellData } from '../types';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
@@ -33,7 +34,7 @@ interface Props {
   onSelectWell: (wellName: string) => void;
 }
 
-const parseDMS = (dmsStr: string): number | null => {
+const parseDMS = (dmsStr: string | undefined): number | null => {
   if (!dmsStr) return null;
   const match = dmsStr.match(/(\d+)°\s*(\d+)'\s*([\d.]+)"\s*([NSEW])/);
   if (!match) return null;
@@ -68,10 +69,10 @@ const WellMap: React.FC<Props> = ({ wells, selectedWellId, onSelectWell }) => {
 
   const wellCoordinates = useMemo(() => {
     return wells.map(w => {
-      const parsedLat = parseDMS(w.location.lat);
-      const parsedLng = parseDMS(w.location.long);
+      const parsedLat = parseDMS(w.location?.lat);
+      const parsedLng = parseDMS(w.location?.long);
       
-      // Fallback to Acrasia-8 default location if parsing fails
+      // Fallback to Acrasia-8 default location if parsing fails or location missing
       const safeLat = (parsedLat !== null && !isNaN(parsedLat)) ? parsedLat : -27.2354;
       const safeLng = (parsedLng !== null && !isNaN(parsedLng)) ? parsedLng : 140.9959;
 
@@ -186,7 +187,9 @@ const WellMap: React.FC<Props> = ({ wells, selectedWellId, onSelectWell }) => {
                     <div className="space-y-1.5">
                         <div className="flex justify-between text-xs items-center gap-4">
                             <span className="text-slate-500 font-medium">Total Depth</span>
-                            <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{well.data.td.toLocaleString()}m</span>
+                            <span className="font-mono font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                              {well.data.td?.toLocaleString() ?? 'N/A'}m
+                            </span>
                         </div>
                     </div>
                 </div>

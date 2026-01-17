@@ -8,7 +8,7 @@ interface Props {
 }
 
 const EngineeringChart: React.FC<Props> = ({ wells }) => {
-  const maxDepth = Math.max(...wells.map(w => w.td));
+  const maxDepth = Math.max(...wells.map(w => w.td || 2000), 100);
   
   // Helper for horizontal positioning as percentage
   const getPos = (depth: number) => `${(depth / maxDepth) * 100}%`;
@@ -65,7 +65,7 @@ const EngineeringChart: React.FC<Props> = ({ wells }) => {
                         {/* Well Info Label (Left) */}
                         <div className="w-48 pr-6 flex flex-col items-end shrink-0">
                              <div className="font-bold text-sm text-slate-900 group-hover/well:text-indigo-600 transition-colors">{well.name}</div>
-                             <div className="text-[10px] text-slate-400 font-mono">TD: {well.td}m</div>
+                             <div className="text-[10px] text-slate-400 font-mono">TD: {well.td?.toLocaleString() ?? '?'}m</div>
                         </div>
 
                         {/* Track */}

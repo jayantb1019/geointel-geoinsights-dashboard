@@ -8,7 +8,7 @@ interface Props {
 }
 
 const WellLogsInventory: React.FC<Props> = ({ wells }) => {
-  const maxDepth = Math.max(...wells.map(w => w.td));
+  const maxDepth = Math.max(...wells.map(w => w.td || 2000), 100);
 
   // Helper for horizontal positioning
   const getPos = (depth: number) => `${(depth / maxDepth) * 100}%`;
@@ -65,7 +65,7 @@ const WellLogsInventory: React.FC<Props> = ({ wells }) => {
                          {/* Label */}
                          <div className="w-32 pr-4 text-right shrink-0">
                             <div className="text-xs font-bold text-slate-700 group-hover/well:text-indigo-600 truncate transition-colors">{well.name}</div>
-                            <div className="text-[10px] text-slate-400 font-mono">TD: {well.td}m</div>
+                            <div className="text-[10px] text-slate-400 font-mono">TD: {well.td?.toLocaleString() ?? '?'}m</div>
                          </div>
 
                          {/* Track */}
@@ -76,7 +76,7 @@ const WellLogsInventory: React.FC<Props> = ({ wells }) => {
                               </div>
 
                               {/* Logs (Unclipped for overlapping tooltips if needed) */}
-                              {well.logs.map((log, idx) => (
+                              {well.logs && well.logs.map((log, idx) => (
                                   <div
                                     key={idx}
                                     className={`absolute top-2 bottom-2 rounded-[2px] border opacity-90 transition-all hover:opacity-100 hover:scale-y-110 hover:shadow-md cursor-help group/log z-10
@@ -106,7 +106,7 @@ const WellLogsInventory: React.FC<Props> = ({ wells }) => {
                                   </div>
                               ))}
                               
-                              {well.logs.length === 0 && (
+                              {(!well.logs || well.logs.length === 0) && (
                                   <div className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-300 italic">No Logs</div>
                               )}
                          </div>

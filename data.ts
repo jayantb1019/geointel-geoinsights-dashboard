@@ -8,7 +8,6 @@ const fileToBase64 = (file: File): Promise<string> => {
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      // Remove data URL prefix (e.g. "data:application/pdf;base64,")
       const base64 = result.split(',')[1];
       resolve(base64);
     };
@@ -88,14 +87,14 @@ export const ACRASIA_8_DATA: WellData = {
 export const processWellReport = async (file: File): Promise<WellData> => {
   const apiKey = process.env.API_KEY;
   if (!apiKey) {
-    throw new Error("API Key not found. Please ensure process.env.API_KEY is set.");
+    throw new Error("API Key not found.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
   const base64Data = await fileToBase64(file);
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-latest",
+    model: "gemini-3-flash-preview",
     contents: {
       parts: [
         {
@@ -105,19 +104,15 @@ export const processWellReport = async (file: File): Promise<WellData> => {
           }
         },
         {
-          text: `You are an expert Petroleum Engineer and Data Scientist. 
-                 Analyze the attached Well Completion Report PDF. 
-                 Extract the technical well data into the specified JSON format.
+          text: `Extract technical well data from this Completion Report. 
+                 Provide the response ONLY as a valid JSON object. Do not include markdown formatting or backticks.
                  
-                 Guidelines:
-                 1. Extract the Well Name, Spud Date, Total Depth (TD), and KB Elevation accurately.
-                 2. Location: Extract coordinates. If in DMS, provide the string. If UTM, try to convert or provide the raw values mapped to northing/easting.
-                 3. Formations: Extract the Stratigraphic Table. Infer a hex color code for each formation based on its lithology (e.g., Sandstone: #F5F5DC, Shale: #708090, Coal: #2F4F4F).
-                 4. Production: Extract Drill Stem Test (DST) results, specifically flow rates (BOPD) and intervals.
-                 5. Complications: Identify drilling hazards like kicks, losses, or tight holes. Assign a severity level.
-                 6. Perforations: Extract perforation intervals and shot density.
-                 7. Logs: Extract the Wireline Logging Summary (Suite, Date, Interval, Run #).
-                 8. Documents: Provide 1-2 key excerpts verifying the extraction, such as the spud date source or the main target reservoir summary.`
+                 IMPORTANT: Focus extraction on text content and data tables. Ignore embedded images, well log plots, and charts unless they contain clear tabular text.
+                 
+                 - Identify the well name, spud date, total depth (TD), and elevation.
+                 - Map formations with top and bottom depths and lithology-based colors.
+                 - Extract flow rates from test summaries (DST).
+                 - Identify drilling events/complications with depth and severity.`
         }
       ]
     },
@@ -126,19 +121,19 @@ export const processWellReport = async (file: File): Promise<WellData> => {
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          name: { type: Type.STRING, description: "Name of the well" },
+          name: { type: Type.STRING },
           location: {
             type: Type.OBJECT,
             properties: {
-              lat: { type: Type.STRING, description: "Latitude in DMS format (e.g. 27° 14' 07.52\" S)" },
-              long: { type: Type.STRING, description: "Longitude in DMS format (e.g. 140° 59' 45.26\" E)" },
-              northing: { type: Type.NUMBER, description: "UTM Northing" },
-              easting: { type: Type.NUMBER, description: "UTM Easting" }
+              lat: { type: Type.STRING },
+              long: { type: Type.STRING },
+              northing: { type: Type.NUMBER },
+              easting: { type: Type.NUMBER }
             }
           },
-          spudDate: { type: Type.STRING, description: "Date the well was spudded (DD/MM/YYYY)" },
-          td: { type: Type.NUMBER, description: "Total Depth in meters" },
-          kbElevation: { type: Type.NUMBER, description: "Kelly Bushing Elevation in meters" },
+          spudDate: { type: Type.STRING },
+          td: { type: Type.NUMBER },
+          kbElevation: { type: Type.NUMBER },
           formations: {
             type: Type.ARRAY,
             items: {
@@ -147,10 +142,11 @@ export const processWellReport = async (file: File): Promise<WellData> => {
                 name: { type: Type.STRING },
                 topMD: { type: Type.NUMBER },
                 bottomMD: { type: Type.NUMBER },
-                description: { type: Type.STRING, description: "Lithological description" },
+                description: { type: Type.STRING },
                 oilShow: { type: Type.BOOLEAN },
-                color: { type: Type.STRING, description: "Hex color code for visualization" }
-              }
+                color: { type: Type.STRING }
+              },
+              required: ["name", "topMD", "bottomMD", "color"]
             }
           },
           production: {
@@ -171,7 +167,7 @@ export const processWellReport = async (file: File): Promise<WellData> => {
               properties: {
                 depth: { type: Type.NUMBER },
                 type: { type: Type.STRING },
-                severity: { type: Type.STRING, enum: ["low", "medium", "high"] },
+                severity: { type: Type.STRING },
                 description: { type: Type.STRING }
               }
             }
@@ -215,14 +211,23 @@ export const processWellReport = async (file: File): Promise<WellData> => {
               }
             }
           }
-        }
+        },
+        required: ["name", "td", "formations"]
       }
     }
   });
 
-  if (!response.text) {
-    throw new Error("Failed to extract data from the document.");
+  const text = response.text;
+  if (!text) {
+    throw new Error("Empty response from AI.");
   }
 
-  return JSON.parse(response.text) as WellData;
+  try {
+    // Clean potential markdown artifacts if they exist despite prompt
+    const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(cleanJson) as WellData;
+  } catch (e) {
+    console.error("JSON Parse Error:", text);
+    throw new Error("Model response was not valid JSON.");
+  }
 };
